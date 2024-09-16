@@ -20,7 +20,8 @@
 
    ```json
    {
-     "ConnectionString": "redis-server:6379"
+     "ConnectionString": "redis-server:6379",
+     "SubscribersCount": 10
    }
    ```
 
@@ -39,6 +40,7 @@
 ## Конфигурация
 
 - **ConnectionString**: строка подключения к Redis (для Docker — `redis-server:6379`).
+- **SubscribersCount**: количество подписчиков
 
 ## Локальный запуск
 
