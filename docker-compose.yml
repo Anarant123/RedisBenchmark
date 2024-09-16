@@ -1,0 +1,6 @@
+﻿services:
+  redisbenchmark.cli:
+    image: redisbenchmark.cli
+    build:
+      context: .
+      dockerfile: RedisBenchmark.CLI/Dockerfile
