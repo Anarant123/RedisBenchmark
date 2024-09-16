@@ -1,34 +1,25 @@
-﻿using System.Diagnostics;
-using RedisBenchmark.CLI.Parts;
+﻿using RedisBenchmark.CLI.Parts;
 using StackExchange.Redis;
+using System.Reactive.Linq;
 
-namespace RedisBenchmark.CLI;
+const string connectionString = "redis-server:6379";
+const string channel = "benchmark_channel";
 
-class Program
+var redis = await ConnectionMultiplexer.ConnectAsync(connectionString);
+
+var publisher = new Publisher(redis, channel);
+
+var subscriber1 = new Subscriber(redis, channel, "Subscriber1");
+var subscriber2 = new Subscriber(redis, channel, "Subscriber2");
+var subscriber3 = new Subscriber(redis, channel, "Subscriber3");
+var subscriber4 = new Subscriber(redis, channel, "Subscriber4");
+var subscriber5 = new Subscriber(redis, channel, "Subscriber5");
+
+for (var i = 1; i <= 5; i++)
 {
-  static async Task Main(string[] _args)
-  {
-    const string connectionString = "redis-server:6379";
-    const string channel = "benchmark_channel";
-    const int messageCount = 10000;
-
-    var redis = await ConnectionMultiplexer.ConnectAsync(connectionString);
-
-    var subscriber = new Subscriber(redis);
-    var publisher = new Publisher(redis);
-
-    var subscribeTask = subscriber.SubscribeAsync(channel, messageCount);
-
-    await Task.Delay(500);
-
-    var stopwatch = Stopwatch.StartNew();
-    await publisher.PublishMessagesAsync(channel, messageCount);
-    stopwatch.Stop();
-
-    Console.WriteLine($"Опубликовано {messageCount} сообщений за {stopwatch.ElapsedMilliseconds} мс");
-
-    await subscribeTask;
-
-    Console.WriteLine("Бенчмарк завершен.");
-  }
+  await publisher.PublishMessagesAsync($"Сообщение {i}");
+  await Task.Delay(5000);
 }
+
+Console.WriteLine("Нажмите любую клавишу для завершения...");
+Console.ReadKey();

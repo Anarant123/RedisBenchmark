@@ -1,41 +1,28 @@
-﻿using System.Diagnostics;
-using StackExchange.Redis;
+﻿using StackExchange.Redis;
+using System;
 
 namespace RedisBenchmark.CLI.Parts;
 
 public class Subscriber
 {
-  private readonly ISubscriber p_subscriber;
-  private int p_messageReceived;
-
-  public Subscriber(IConnectionMultiplexer _redis)
+  public Subscriber(IConnectionMultiplexer _redis, string _channelName, string _subscriberName)
   {
-    p_subscriber = _redis.GetSubscriber();
-  }
-
-  public async Task SubscribeAsync(string _channel, int _expectedMessageCount)
-  {
-    p_messageReceived = 0;
-    List<double> latencies = new List<double>();
-
-    await p_subscriber.SubscribeAsync(_channel, (_chan, _message) =>
+    var subscriberName = _subscriberName;
+    var subscriber = _redis.GetSubscriber();
+    subscriber.SubscribeAsync(_channelName, (_channel, _message) =>
     {
-      p_messageReceived++;
-
-      var sentTimestamp = long.Parse(_message);
-      var receivedTimestamp = Stopwatch.GetTimestamp();
-      var latency = (receivedTimestamp - sentTimestamp) * 1000.0 / Stopwatch.Frequency;
-      latencies.Add(latency);
-
-      if (p_messageReceived % 1000 == 0)
+      var messageParts = _message.ToString().Split('|');
+      if (messageParts.Length == 2 && DateTime.TryParse(messageParts[1], out var sentTime))
       {
-        Console.WriteLine($"{p_messageReceived} сообщений получено, средняя задержка: {latencies.Average():F2} мс");
-        latencies.Clear();
+        var receivedTime = DateTime.UtcNow;
+        var timeDifference = receivedTime - sentTime;
+        Console.WriteLine($"{subscriberName} получил сообщение: {messageParts[0]} в {receivedTime:O}, " +
+                          $"задержка: {timeDifference.TotalMilliseconds} мс");
       }
-
-      if (p_messageReceived != _expectedMessageCount) return;
-      Console.WriteLine("Все сообщения получены.");
-      Console.WriteLine($"Средняя задержка: {latencies.Average():F2} мс");
+      else
+      {
+        Console.WriteLine($"{subscriberName} получил сообщение: {_message}");
+      }
     });
   }
 }

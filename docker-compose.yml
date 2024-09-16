@@ -13,7 +13,7 @@ services:
 
   app:
     build:
-      context: .
+      context: ./RedisBenchmark.CLI
       dockerfile: Dockerfile
     container_name: redis-benchmark-app
     depends_on:
